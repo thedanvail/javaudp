@@ -26,6 +26,19 @@ public class Driver {
         return (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
     }
 
+    public static byte[] createByteArray(BufferedImage image) {
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ImageIO.write(image, "jpg", byteArrayOutputStream);
+            byte[] arr = byteArrayOutputStream.toByteArray();
+            byteArrayOutputStream.flush();
+            byteArrayOutputStream.close();
+            return arr;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } return new byte[1];
+    }
+
     public static void sendData(byte[] buffer, DatagramSocket ds, InetAddress ip, int port ) {
 
         int startOffsetValue, packetCounter = 1;
@@ -62,6 +75,11 @@ public class Driver {
                     System.out.println(
                             " Packet Number: " + packetCounter + "\t SO: " + startOffsetValue + "     \tEO: " + (i - 1));
                     packetCounter++;
+                } 
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         } catch(IOException e) {
@@ -70,14 +88,8 @@ public class Driver {
     }
 
     public static void main(String args[]) throws IOException {
-        int port = 9876;
-        // Creating the socket object for carrying the data.
-        DatagramSocket ds = new DatagramSocket();
-        byte[] receiveData = new byte[1024];
-        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        int port = 13085;
         String filePath = args[0];
-
-        // The image being passed in.
         BufferedImage img = ImageIO.read(new File(filePath));
         String fileExtension = Driver.getFileExtension(args[0]);
         if (!correctFileType(fileExtension)) {
@@ -85,24 +97,22 @@ public class Driver {
             System.exit(0);
         }
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ImageIO.write(img, fileExtension, outputStream);
-        outputStream.flush();
-
-        // the byte array that holds the image data.
-        byte[] buffer = outputStream.toByteArray();
-        outputStream.close();
-
         // Assume ip is localhost unless told otherwise
         InetAddress ip = InetAddress.getLocalHost();
         if (args.length > 2) {
             ip = InetAddress.getByName(args[1]);
         }
 
+        byte[] buffer = createByteArray(img);
+        // Creating the socket object for carrying the data.
+        DatagramSocket ds = new DatagramSocket();
+
         // Sending the data
         Driver.sendData(buffer, ds, ip, port);
 
         // Receive data
+        byte[] receiveData = new byte[1024];
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         ds.receive(receivePacket);
         ds.close();
     }
