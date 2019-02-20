@@ -12,6 +12,8 @@ public class Driver {
     public static boolean correctFileType(String extension){
         boolean flag = false;
         switch (extension) {
+            case "png":
+                flag = true;
             case "jpg":
                 flag = true;
         }
